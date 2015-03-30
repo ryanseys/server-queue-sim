@@ -1,5 +1,5 @@
 # Constants - Do not change
-POLICIES = [:random, :roundrobin]
+POLICIES = [:random, :roundrobin, :lcq]
 
 # Calculates the average of all the numbers in the array
 def average(arr)
@@ -53,8 +53,8 @@ class SimulationTopologyOne
   # Selects a queue based on the different policies possible
   def selectQueue(policy)
     if policy == :random
-      # Return connected queue with max length
-      return (@queues.select { |q| q.connected? }).max_by(&:size)
+      # Return random connected queue
+      return (@queues.select { |q| q.connected? }).sample
     elsif policy == :roundrobin
       queue = @queues[@roundRobinNextIndex]
       @roundRobinNextIndex = (@roundRobinNextIndex + 1) % @numQueues
@@ -64,8 +64,8 @@ class SimulationTopologyOne
         queue
       end
     elsif policy == :lcq
-      puts 'Policy LCQ not implemented.'
-      raise
+      # Return connected queue with max length
+      return (@queues.select { |q| q.connected? }).max_by(&:size)
     end
   end
 
