@@ -156,8 +156,43 @@ class Server
 end
 
 # Run your simulations here
+
+# Topology 1 - Symmetric (All p are equal)
+
+# p = 1, λ = 0.02
 pn = Array.new(5, 1.0)
 ln = Array.new(5, 0.02)
-sim1 = SimulationTopologyOne.new(1000, 20, 5, 1, :random, pn, ln)
-sim1.runSimulation
-sim1.printStatistics
+sim = SimulationTopologyOne.new(1000, 20, 5, 1, :random, pn, ln)
+sim.runSimulation
+sim.printStatistics
+
+# p = 1, λ = 0.02 × i, i = 1, 2, ...
+pn = Array.new(5, 1.0)
+ln = Array.new(5, 0.02).map.with_index {|x, i| x * (i+1) }
+sim = SimulationTopologyOne.new(1000, 20, 5, 1, :random, pn, ln)
+sim.runSimulation
+sim.printStatistics
+
+# p = 0.8, λ = 0.02 × i, i = 1, 2, ...
+pn = Array.new(5, 0.8)
+ln = Array.new(5, 0.02).map.with_index {|x, i| x * (i+1) }
+sim = SimulationTopologyOne.new(1000, 20, 5, 1, :random, pn, ln)
+sim.runSimulation
+sim.printStatistics
+
+# p = 0.2, λ = 0.014 × i, i = 1, 2, ...
+pn = Array.new(5, 0.2)
+ln = Array.new(5, 0.014).map.with_index {|x, i| x * (i+1) }
+sim = SimulationTopologyOne.new(1000, 20, 5, 1, :random, pn, ln)
+sim.runSimulation
+sim.printStatistics
+
+# Topology 1 - Asymmetric (p are different)
+
+# p1 = 1, p2 = 0.8, p3 = 0.6, p4 = 0.4 and p5 = 0.2
+# λ = 0.006 × i, i = 1, 2, ...
+pn = Array.new(5, 0.2).map.with_index {|x, i| x * (5-i) }
+ln = Array.new(5, 0.006).map.with_index {|x, i| x * (i+1) }
+sim = SimulationTopologyOne.new(1000, 20, 5, 1, :random, pn, ln)
+sim.runSimulation
+sim.printStatistics
