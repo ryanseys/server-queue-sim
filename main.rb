@@ -11,27 +11,24 @@ def average(arr)
 end
 
 class SimulationTopologyOne
-  def initialize(maxTime, maxReps, numQueues, numServers, policy, isSymmetric)
+  def initialize(maxTime, maxReps, numQueues, numServers, policy, pn, ln)
     @maxTime = maxTime
     @maxReps = maxReps
     @numQueues = numQueues
     @numServers = numServers
-    @isSymmetric = isSymmetric
     @policy = policy
-
     @time = 0
     @queues = []
     @servers = []
-
-    lambda = 0.02
-    probability = 1
+    @probabs = pn
+    @lambdas = ln
 
     # Create N queues
-    for i in (0..@numQueues)
-      @queues[i] = SimQueue.new(lambda, probability)
+    for i in (0...@numQueues)
+      @queues[i] = SimQueue.new(@probabs[i], @lambdas[i])
     end
 
-    for i in (0..@numServers)
+    for i in (0...@numServers)
       @servers[i] = Server.new
     end
 
@@ -42,7 +39,7 @@ class SimulationTopologyOne
   end
 
   def generateArrivals()
-    for i in (0..@numQueues)
+    for i in (0...@numQueues)
       queue = @queues[i]
       queue.generateArrival(@time)
     end
@@ -55,7 +52,7 @@ class SimulationTopologyOne
   # Selects a queue based on the different policies possible
   def selectQueue(policy)
     if policy == :random
-      # Return queue with max length
+      # Return connected queue with max length
       return (@queues.select { |q| q.connected? }).max_by(&:size)
     elsif policy == :roundrobin
       puts 'Policy Round Robin not implemented.'
@@ -106,7 +103,7 @@ end
 # the purposes of this simulation.
 class SimQueue
 
-  def initialize(lambda, probability)
+  def initialize(probability, lambda)
     @queue = Array.new
     @lambda = lambda
     @probConnected = probability
@@ -159,7 +156,8 @@ class Server
 end
 
 # Run your simulations here
-
-sim1 = SimulationTopologyOne.new(1000, 20, 5, 1, :random, true)
+pn = Array.new(5, 1.0)
+ln = Array.new(5, 0.02)
+sim1 = SimulationTopologyOne.new(1000, 20, 5, 1, :random, pn, ln)
 sim1.runSimulation
 sim1.printStatistics
