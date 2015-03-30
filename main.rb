@@ -1,5 +1,5 @@
 # Constants to change
-MAX_TIME = 50000
+MAX_TIME = 10
 MAX_REPETITIONS = 20
 NUM_QUEUES = 5
 NUM_SERVERS = 1
@@ -7,12 +7,15 @@ CASE = 1
 SYMMETRIC = true
 POLICY = :random
 
-# SimQueue inherits from Queue
 # SimQueue represents a Queue for
 # the purposes of this simulation.
-class SimQueue < Queue
-  def initialize
+class SimQueue
+
+  def initialize(lambda, probability)
+    @queue = Array.new
     @connected = false
+    @lambda = lambda
+    @probability = probability
   end
 
   def connect
@@ -25,6 +28,20 @@ class SimQueue < Queue
 
   def connected?
     @connected
+  end
+
+  def enq(x)
+    @queue.push(x)
+  end
+
+  def deq(x)
+    @queue.shift()
+  end
+
+  def generateArrival(t)
+    if rand() < @lambda
+      @queue.push(t)
+    end
   end
 end
 
@@ -53,19 +70,17 @@ end
 
 time = 0
 @queues = []
+
 policies = {
   :random => true,
   :roundrobin => true,
   :lcq => true
 }
 
-# queue n is connected with probability pn i.e., E[Cn(t)] = pn.
-pn = []
-ln = []
-lambda = 0.02
-
-queueLengths = []
 server = Server.new
+numServiced = 0
+probability = 1 # queue n is connected with probability pn i.e., E[Cn(t)] = pn.
+lambda = 0.02
 
 # Selects a queue based on the different policies possible
 def selectQueue(policy)
@@ -81,12 +96,16 @@ def selectQueue(policy)
   end
 end
 
+def generateArrivals(time)
+  for i in (0..NUM_QUEUES)
+    queue = @queues[i]
+    queue.generateArrival(time)
+  end
+end
+
 # Create N queues
 for i in (0..NUM_QUEUES)
-  @queues[i] = SimQueue.new
-  queueLengths[i] = 0 # initialize all lengths to zero
-  pn[i] = 1 # probability
-  ln[i] = lambda # constant lambda for every queue
+  @queues[i] = SimQueue.new(lambda, probability)
 end
 
 while time <= MAX_TIME
@@ -105,7 +124,11 @@ while time <= MAX_TIME
   else
     packet = queue.deq()
     server.process(packet)
+    numServiced += 1
   end
+
+  # Step 3. New packet arrivals are added to the queues.
+  generateArrivals(time)
 
   # TODO. Lots to do.
 
