@@ -47,7 +47,8 @@ class SimulationTopologyOne
   end
 
   def printStatistics
-    puts "Average queue length over 20 reps: #{average(@stats[:averagePerRep])}"
+    puts "\nSimulation results for p = #{@probabs}, λ = #{@lambdas}"
+    puts "Average queue length over #{@maxReps} reps: #{average(@stats[:averagePerRep])}"
   end
 
   # Selects a queue based on the different policies possible
@@ -174,6 +175,9 @@ end
 
 # Run your simulations here
 
+MAX_TIME = 10000
+MAX_REPS = 20
+
 puts 'Running your simulation. Please be patient...'
 
 # Topology 1 - Symmetric (All p are equal)
@@ -181,37 +185,49 @@ puts 'Running your simulation. Please be patient...'
 # p = 1, λ = 0.02
 pn = Array.new(5, 1.0)
 ln = Array.new(5, 0.02)
-sim = SimulationTopologyOne.new(10000, 20, 5, 1, :random, pn, ln)
+sim = SimulationTopologyOne.new(MAX_TIME, MAX_REPS, 5, 1, :random, pn, ln)
 sim.runSimulation
 sim.printStatistics
 
 # p = 1, λ = 0.02 × i, i = 1, 2, ...
-pn = Array.new(5, 1.0)
-ln = Array.new(5, 0.02).map.with_index {|x, i| x * (i+1) }
-sim = SimulationTopologyOne.new(10000, 20, 5, 1, :random, pn, ln)
-sim.runSimulation
-sim.printStatistics
+lambdas = Array.new(10, 0.02).map.with_index {|x, i| x * (i+1) }
+lambdas.each do |lambda|
+  pn = Array.new(5, 1.0)
+  ln = Array.new(5, lambda)
+  sim = SimulationTopologyOne.new(MAX_TIME, MAX_REPS, 5, 1, :random, pn, ln)
+  sim.runSimulation
+  sim.printStatistics
+end
 
-# # p = 0.8, λ = 0.02 × i, i = 1, 2, ...
-pn = Array.new(5, 0.8)
-ln = Array.new(5, 0.02).map.with_index {|x, i| x * (i+1) }
-sim = SimulationTopologyOne.new(10000, 20, 5, 1, :random, pn, ln)
-sim.runSimulation
-sim.printStatistics
+# p = 0.8, λ = 0.02 × i, i = 1, 2, ...
+lambdas = Array.new(10, 0.02).map.with_index {|x, i| x * (i+1) }
+lambdas.each do |lambda|
+  pn = Array.new(5, 0.8)
+  ln = Array.new(5, lambda)
+  sim = SimulationTopologyOne.new(MAX_TIME, MAX_REPS, 5, 1, :random, pn, ln)
+  sim.runSimulation
+  sim.printStatistics
+end
 
-# # p = 0.2, λ = 0.014 × i, i = 1, 2, ...
-pn = Array.new(5, 0.2)
-ln = Array.new(5, 0.014).map.with_index {|x, i| x * (i+1) }
-sim = SimulationTopologyOne.new(10000, 20, 5, 1, :random, pn, ln)
-sim.runSimulation
-sim.printStatistics
+# p = 0.2, λ = 0.014 × i, i = 1, 2, ...
+lambdas = Array.new(10, 0.014).map.with_index {|x, i| x * (i+1) }
+lambdas.each do |lambda|
+  pn = Array.new(5, 0.2)
+  ln = Array.new(5, lambda)
+  sim = SimulationTopologyOne.new(MAX_TIME, MAX_REPS, 5, 1, :random, pn, ln)
+  sim.runSimulation
+  sim.printStatistics
+end
 
-# # Topology 1 - Asymmetric (p are different)
+# Topology 1 - Asymmetric (p are different)
 
-# # p1 = 1, p2 = 0.8, p3 = 0.6, p4 = 0.4 and p5 = 0.2
-# # λ = 0.006 × i, i = 1, 2, ...
-pn = Array.new(5, 0.2).map.with_index {|x, i| x * (5-i) }
-ln = Array.new(5, 0.006).map.with_index {|x, i| x * (i+1) }
-sim = SimulationTopologyOne.new(10000, 20, 5, 1, :random, pn, ln)
-sim.runSimulation
-sim.printStatistics
+# p1 = 1, p2 = 0.8, p3 = 0.6, p4 = 0.4 and p5 = 0.2
+# λ = 0.006 × i, i = 1, 2, ...
+lambdas = Array.new(10, 0.006).map.with_index {|x, i| x * (i+1) }
+lambdas.each do |lambda|
+  pn = Array.new(5, 0.2).map.with_index {|x, i| x * (5-i) }
+  ln = Array.new(5, lambda)
+  sim = SimulationTopologyOne.new(MAX_TIME, MAX_REPS, 5, 1, :random, pn, ln)
+  sim.runSimulation
+  sim.printStatistics
+end
