@@ -34,7 +34,8 @@ class SimulationTopologyOne
 
     @stats = {
       :numServiced => 0,
-      :averageQueueLengths => []
+      :averageQueueLengths => [],
+      :averagePerRep => []
     }
   end
 
@@ -46,7 +47,7 @@ class SimulationTopologyOne
   end
 
   def printStatistics
-    puts "Average queue length: #{average(@stats[:averageQueueLengths])}"
+    puts "Average queue length over 20 reps: #{average(@stats[:averagePerRep])}"
   end
 
   # Selects a queue based on the different policies possible
@@ -69,32 +70,48 @@ class SimulationTopologyOne
     @stats[:averageQueueLengths].push(averageLength)
   end
 
+  def collectRepStats
+    avgs = @stats[:averageQueueLengths]
+    @stats[:averagePerRep].push(average(avgs))
+  end
+
+  def resetSimulation
+    @time = 0
+    @stats[:numServiced] = 0
+    @stats[:averageQueueLengths] = []
+  end
+
   def runSimulation
-    while @time <= @maxTime
-      # Check if policy exists
-      if not POLICIES.member?(@policy)
-        puts 'Invalid policy!'
-        break
+    for i in (0...@maxReps)
+      while @time <= @maxTime
+        # Check if policy exists
+        if not POLICIES.member?(@policy)
+          puts 'Invalid policy!'
+          break
+        end
+
+        # Step 1. Select a queue given the policy set
+        queue = selectQueue(@policy)
+
+        # Step 2. Server serves the head packet in the queue.
+        if queue.nil?
+          # puts 'No queue could be selected.'
+        else
+          packet = queue.deq()
+          @servers[0].process(packet) # Use only first server
+          @stats[:numServiced] += 1
+        end
+
+        # Step 3. New packet arrivals are added to the queues.
+        generateArrivals()
+
+        collectStatistics()
+
+        @time += 1
       end
 
-      # Step 1. Select a queue given the policy set
-      queue = selectQueue(@policy)
-
-      # Step 2. Server serves the head packet in the queue.
-      if queue.nil?
-        # puts 'No queue could be selected.'
-      else
-        packet = queue.deq()
-        @servers[0].process(packet) # Use only first server
-        @stats[:numServiced] += 1
-      end
-
-      # Step 3. New packet arrivals are added to the queues.
-      generateArrivals()
-
-      collectStatistics()
-
-      @time += 1
+      collectRepStats()
+      resetSimulation()
     end
   end
 end
@@ -157,42 +174,44 @@ end
 
 # Run your simulations here
 
+puts 'Running your simulation. Please be patient...'
+
 # Topology 1 - Symmetric (All p are equal)
 
 # p = 1, λ = 0.02
 pn = Array.new(5, 1.0)
 ln = Array.new(5, 0.02)
-sim = SimulationTopologyOne.new(1000, 20, 5, 1, :random, pn, ln)
+sim = SimulationTopologyOne.new(10000, 20, 5, 1, :random, pn, ln)
 sim.runSimulation
 sim.printStatistics
 
 # p = 1, λ = 0.02 × i, i = 1, 2, ...
 pn = Array.new(5, 1.0)
 ln = Array.new(5, 0.02).map.with_index {|x, i| x * (i+1) }
-sim = SimulationTopologyOne.new(1000, 20, 5, 1, :random, pn, ln)
+sim = SimulationTopologyOne.new(10000, 20, 5, 1, :random, pn, ln)
 sim.runSimulation
 sim.printStatistics
 
-# p = 0.8, λ = 0.02 × i, i = 1, 2, ...
+# # p = 0.8, λ = 0.02 × i, i = 1, 2, ...
 pn = Array.new(5, 0.8)
 ln = Array.new(5, 0.02).map.with_index {|x, i| x * (i+1) }
-sim = SimulationTopologyOne.new(1000, 20, 5, 1, :random, pn, ln)
+sim = SimulationTopologyOne.new(10000, 20, 5, 1, :random, pn, ln)
 sim.runSimulation
 sim.printStatistics
 
-# p = 0.2, λ = 0.014 × i, i = 1, 2, ...
+# # p = 0.2, λ = 0.014 × i, i = 1, 2, ...
 pn = Array.new(5, 0.2)
 ln = Array.new(5, 0.014).map.with_index {|x, i| x * (i+1) }
-sim = SimulationTopologyOne.new(1000, 20, 5, 1, :random, pn, ln)
+sim = SimulationTopologyOne.new(10000, 20, 5, 1, :random, pn, ln)
 sim.runSimulation
 sim.printStatistics
 
-# Topology 1 - Asymmetric (p are different)
+# # Topology 1 - Asymmetric (p are different)
 
-# p1 = 1, p2 = 0.8, p3 = 0.6, p4 = 0.4 and p5 = 0.2
-# λ = 0.006 × i, i = 1, 2, ...
+# # p1 = 1, p2 = 0.8, p3 = 0.6, p4 = 0.4 and p5 = 0.2
+# # λ = 0.006 × i, i = 1, 2, ...
 pn = Array.new(5, 0.2).map.with_index {|x, i| x * (5-i) }
 ln = Array.new(5, 0.006).map.with_index {|x, i| x * (i+1) }
-sim = SimulationTopologyOne.new(1000, 20, 5, 1, :random, pn, ln)
+sim = SimulationTopologyOne.new(10000, 20, 5, 1, :random, pn, ln)
 sim.runSimulation
 sim.printStatistics
