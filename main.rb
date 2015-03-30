@@ -1,5 +1,5 @@
 # Constants to change
-MAX_TIME = 10
+MAX_TIME = 50000
 MAX_REPETITIONS = 20
 NUM_QUEUES = 5
 NUM_SERVERS = 1
@@ -13,28 +13,23 @@ class SimQueue
 
   def initialize(lambda, probability)
     @queue = Array.new
-    @connected = false
     @lambda = lambda
-    @probability = probability
-  end
-
-  def connect
-    @connected = true
-  end
-
-  def disconnect
-    @connected = false
+    @probConnected = probability
   end
 
   def connected?
-    @connected
+    rand() < @probConnected
+  end
+
+  def size
+    @queue.size
   end
 
   def enq(x)
     @queue.push(x)
   end
 
-  def deq(x)
+  def deq()
     @queue.shift()
   end
 
@@ -79,14 +74,14 @@ policies = {
 
 server = Server.new
 numServiced = 0
-probability = 1 # queue n is connected with probability pn i.e., E[Cn(t)] = pn.
-lambda = 0.02
+probability = 0.2 # queue n is connected with probability pn i.e., E[Cn(t)] = pn.
+lambda = 0.03
 
 # Selects a queue based on the different policies possible
 def selectQueue(policy)
   if policy == :random
     # Return queue with max length
-    return @queues.select { |q| q.connected? }.max_by(&:size)
+    return (@queues.select { |q| q.connected? }).max_by(&:size)
   elsif policy == :roundrobin
     puts 'Policy Round Robin not implemented.'
     raise
@@ -101,6 +96,22 @@ def generateArrivals(time)
     queue = @queues[i]
     queue.generateArrival(time)
   end
+end
+
+@averageLengths = []
+
+def average(arr)
+  arr.reduce(:+).to_f / arr.size
+end
+
+def collectStatistics
+  queueLengths = @queues.map { |q| q.size }
+  averageLength = average(queueLengths)
+  @averageLengths.push(averageLength)
+end
+
+def printStatistics
+  puts "Average queue length: #{average(@averageLengths)}"
 end
 
 # Create N queues
@@ -120,7 +131,7 @@ while time <= MAX_TIME
 
   # Step 2. Server serves the head packet in the queue.
   if queue.nil?
-    puts 'No queue could be selected.'
+    # puts 'No queue could be selected.'
   else
     packet = queue.deq()
     server.process(packet)
@@ -130,7 +141,9 @@ while time <= MAX_TIME
   # Step 3. New packet arrivals are added to the queues.
   generateArrivals(time)
 
-  # TODO. Lots to do.
+  collectStatistics()
 
   time += 1
 end
+
+printStatistics()
