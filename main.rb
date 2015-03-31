@@ -1,6 +1,6 @@
 # Constants - Do not change
 POLICIES = [:random, :roundrobin, :lcq]
-POLICIES2 = [:random]
+POLICIES2 = [:random, :aslcq]
 
 # Calculates the average of all the numbers in the array
 def average(arr)
@@ -91,20 +91,25 @@ class Simulation
 
   def assignServersToQueues(policy)
     assignments = []
-    connected_queues = (@queues.select { |q| q.connected? })
 
-    if not connected_queues.empty?
-      shuffled_servers = @servers.shuffle
-      if policy == :random
-        # Each server gets allocated to a random connected queue
-        shuffled_servers.each do |s|
-          assignments.push([s, connected_queues.sample])
-        end
-      elsif policy == :aslcq
-        # TODO: Do this policy.
-      elsif policy == :lcsflcq
-        # TODO: Do this policy.
+    shuffled_servers = @servers.shuffle
+    if policy == :random
+      # Each server gets allocated to a random connected queue
+      shuffled_servers.each do |s|
+        connected_queues = (@queues.select { |q| q.connected? })
+        assignments.push([s, connected_queues.sample])
       end
+    elsif policy == :aslcq
+      # Each server gets allocated to longest queue thats connected to it.
+      shuffled_servers.each do |s|
+        connected_queues = (@queues.select { |q| q.connected? })
+        longest_connected_queue = connected_queues.sort_by(&:size).reverse[0]
+        assignments.push([s, longest_connected_queue])
+      end
+    elsif policy == :lcsflcq
+      # Least Connected Server First/Longest Connected Queue (LCSF/LCQ)
+
+      # TODO: Do this policy.
     end
 
     assignments
@@ -153,8 +158,12 @@ class Simulation
             server = assignment[0]
             queue = assignment[1]
 
-            packet = queue.deq()
-            server.process(packet)
+            if queue.nil?
+              # Nothing happens.
+            else
+              packet = queue.deq()
+              server.process(packet)
+            end
           end
         end
 
@@ -217,7 +226,7 @@ end
 
 # Run your simulations here
 
-MAX_TIME = 10000
+MAX_TIME = 100
 MAX_REPS = 20
 
 puts 'Running your simulation. Please be patient...'
