@@ -45,9 +45,28 @@ class SimulationTopologyOne
   end
 
   def printStatistics
-    average = average(@stats[:averagePerRep])
+    queueOccupancies = @stats[:averagePerRep]
+    totalAverageQueueOccupancy = average(queueOccupancies)
+
+    # 95% Confidence Interval
+    sum = 0
+
+    queueOccupancies.each do |occ|
+      sum += ((occ - totalAverageQueueOccupancy) ** 2)
+    end
+
+    s_squared = sum/(@maxReps-1);
+    s = Math.sqrt(s_squared);
+
+    t = 2.093; # 95% confidence interval t-statistic for N = 20
+    range = t * s / Math.sqrt(@maxReps-1);
+    lowCI = totalAverageQueueOccupancy - range;
+    highCI = totalAverageQueueOccupancy + range;
+
     puts "\nResults for Policy = #{@policy}, p = #{@probabs}, and λ = #{@lambdas}"
-    puts "Average queue length over #{@maxReps} reps: #{average}"
+    puts "Average queue length over #{@maxReps} reps: #{totalAverageQueueOccupancy}"
+    puts "Range = #{range}"
+    puts "95% Confidence interval = (#{lowCI}, #{highCI})"
   end
 
   # Selects a queue based on the different policies possible
@@ -184,7 +203,7 @@ end
 # Run your simulations here
 
 MAX_TIME = 10000
-MAX_REPS = 1
+MAX_REPS = 20
 
 puts 'Running your simulation. Please be patient...'
 
