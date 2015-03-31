@@ -285,7 +285,7 @@ POLICIES2.each do |policy|
   lambdas = Array.new(10, 0.02).map.with_index {|x, i| x * (i+1) }
   lambdas.each do |lambda|
     pn = Array.new(5, 0.5)
-    ln = Array.new(5, lambda)
+    ln = Array.new(5, lambda).map.with_index {|x, i| x * (i+1) }
     sim = Simulation.new(MAX_TIME, MAX_REPS, NUM_QUEUES, NUM_SERVERS, policy, pn, ln)
     sim.runSimulation
     sim.printStatistics
