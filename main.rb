@@ -1,12 +1,13 @@
 # Constants - Do not change
 POLICIES = [:random, :roundrobin, :lcq]
+POLICIES2 = [:random, :aslcq, :lcsflcq]
 
 # Calculates the average of all the numbers in the array
 def average(arr)
   arr.reduce(:+).to_f / arr.size
 end
 
-class SimulationTopologyOne
+class Simulation
   def initialize(maxTime, maxReps, numQueues, numServers, policy, pn, ln)
     @maxTime = maxTime
     @maxReps = maxReps
@@ -108,18 +109,12 @@ class SimulationTopologyOne
   def runSimulation
     for i in (0...@maxReps)
       while @time <= @maxTime
-        # Check if policy exists
-        if not POLICIES.include?(@policy)
-          puts 'Invalid policy!'
-          break
-        end
-
         # Step 1. Select a queue given the policy set
         queue = selectQueue(@policy)
 
         # Step 2. Server serves the head packet in the queue.
         if queue.nil?
-          # puts 'No queue could be selected.'
+          # Nothing happens. Wasted time slot.
         else
           packet = queue.deq()
           @servers[0].process(packet) # Use only first server
@@ -214,7 +209,7 @@ POLICIES.each do |policy|
   # p = 1, λ = 0.02
   pn = Array.new(5, 1.0)
   ln = Array.new(5, 0.02)
-  sim = SimulationTopologyOne.new(MAX_TIME, MAX_REPS, 5, 1, policy, pn, ln)
+  sim = Simulation.new(MAX_TIME, MAX_REPS, 5, 1, policy, pn, ln)
   sim.runSimulation
   sim.printStatistics
 
@@ -223,7 +218,7 @@ POLICIES.each do |policy|
   lambdas.each do |lambda|
     pn = Array.new(5, 1.0)
     ln = Array.new(5, lambda)
-    sim = SimulationTopologyOne.new(MAX_TIME, MAX_REPS, 5, 1, policy, pn, ln)
+    sim = Simulation.new(MAX_TIME, MAX_REPS, 5, 1, policy, pn, ln)
     sim.runSimulation
     sim.printStatistics
   end
@@ -233,7 +228,7 @@ POLICIES.each do |policy|
   lambdas.each do |lambda|
     pn = Array.new(5, 0.8)
     ln = Array.new(5, lambda)
-    sim = SimulationTopologyOne.new(MAX_TIME, MAX_REPS, 5, 1, policy, pn, ln)
+    sim = Simulation.new(MAX_TIME, MAX_REPS, 5, 1, policy, pn, ln)
     sim.runSimulation
     sim.printStatistics
   end
@@ -243,7 +238,7 @@ POLICIES.each do |policy|
   lambdas.each do |lambda|
     pn = Array.new(5, 0.2)
     ln = Array.new(5, lambda)
-    sim = SimulationTopologyOne.new(MAX_TIME, MAX_REPS, 5, 1, policy, pn, ln)
+    sim = Simulation.new(MAX_TIME, MAX_REPS, 5, 1, policy, pn, ln)
     sim.runSimulation
     sim.printStatistics
   end
@@ -256,8 +251,12 @@ POLICIES.each do |policy|
   lambdas.each do |lambda|
     pn = Array.new(5, 0.2).map.with_index {|x, i| x * (5-i) }
     ln = Array.new(5, lambda)
-    sim = SimulationTopologyOne.new(MAX_TIME, MAX_REPS, 5, 1, policy, pn, ln)
+    sim = Simulation.new(MAX_TIME, MAX_REPS, 5, 1, policy, pn, ln)
     sim.runSimulation
     sim.printStatistics
   end
+end
+
+POLICIES2.each do |policy|
+  # TODO: Topology 2
 end
