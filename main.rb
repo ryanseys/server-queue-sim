@@ -1,6 +1,6 @@
 # Constants - Do not change
 POLICIES = [:random, :roundrobin, :lcq]
-POLICIES2 = [:random, :aslcq, :lcsflcq]
+POLICIES2 = [:random]
 
 # Calculates the average of all the numbers in the array
 def average(arr)
@@ -89,6 +89,27 @@ class Simulation
     end
   end
 
+  def assignServersToQueues(policy)
+    assignments = []
+    connected_queues = (@queues.select { |q| q.connected? })
+
+    if not connected_queues.empty?
+      shuffled_servers = @servers.shuffle
+      if policy == :random
+        # Each server gets allocated to a random connected queue
+        shuffled_servers.each do |s|
+          assignments.push([s, connected_queues.sample])
+        end
+      elsif policy == :aslcq
+
+      elsif policy == :lcsflcq
+
+      end
+    end
+
+    assignments
+  end
+
   def collectStatistics
     queueLengths = @queues.map { |q| q.size }
     averageLength = average(queueLengths)
@@ -109,16 +130,32 @@ class Simulation
   def runSimulation
     for i in (0...@maxReps)
       while @time <= @maxTime
-        # Step 1. Select a queue given the policy set
-        queue = selectQueue(@policy)
+        # Topology 1
+        if @servers.size == 1
+          # Step 1. Select a queue given the policy set
+          queue = selectQueue(@policy)
 
-        # Step 2. Server serves the head packet in the queue.
-        if queue.nil?
-          # Nothing happens. Wasted time slot.
+          # Step 2. Server serves the head packet in the queue.
+          if queue.nil?
+            # Nothing happens. Wasted time slot.
+          else
+            packet = queue.deq()
+            @servers[0].process(packet) # Use only first server
+            @stats[:numServiced] += 1
+          end
         else
-          packet = queue.deq()
-          @servers[0].process(packet) # Use only first server
-          @stats[:numServiced] += 1
+          # TODO: Topology 2
+          # Step 1. Assign each server to a queue.
+          assignments = assignServersToQueues(@policy)
+
+          # Step 2. Servers serve the head packet of every queue.
+          assignments.each do |assignment|
+            server = assignment[0]
+            queue = assignment[1]
+
+            packet = queue.deq()
+            server.process(packet)
+          end
         end
 
         # Step 3. New packet arrivals are added to the queues.
@@ -173,25 +210,8 @@ class SimQueue
 end
 
 class Server
-  def initialize
-    @busy = false
-    @packet = nil
-  end
-
-  def busy?
-    @busy
-  end
-
   def process(packet)
-    if not packet.nil?
-      @busy = true
-      @packet = packet
-    end
-  end
-
-  def endProcess
-    @busy = false
-    @packet = nil
+    # We don't really need to do anything here with the packet.
   end
 end
 
@@ -257,6 +277,17 @@ POLICIES.each do |policy|
   end
 end
 
+NUM_QUEUES = 5
+NUM_SERVERS = 3
+
 POLICIES2.each do |policy|
   # TODO: Topology 2
+  lambdas = Array.new(10, 0.02).map.with_index {|x, i| x * (i+1) }
+  lambdas.each do |lambda|
+    pn = Array.new(5, 0.5)
+    ln = Array.new(5, lambda)
+    sim = Simulation.new(MAX_TIME, MAX_REPS, NUM_QUEUES, NUM_SERVERS, policy, pn, ln)
+    sim.runSimulation
+    sim.printStatistics
+  end
 end
