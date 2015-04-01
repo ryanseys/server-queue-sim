@@ -1,6 +1,6 @@
 # Constants - Do not change
 POLICIES = [:random, :roundrobin, :lcq]
-POLICIES2 = [:random, :aslcq]
+POLICIES2 = [:random, :aslcq, :lcsflcq]
 
 # Calculates the average of all the numbers in the array
 def average(arr)
@@ -96,20 +96,41 @@ class Simulation
     if policy == :random
       # Each server gets allocated to a random connected queue
       shuffled_servers.each do |s|
-        connected_queues = (@queues.select { |q| q.connected? })
+        connected_queues = @queues.select { |q| q.connected? }
         assignments.push([s, connected_queues.sample])
       end
     elsif policy == :aslcq
       # Each server gets allocated to longest queue thats connected to it.
       shuffled_servers.each do |s|
-        connected_queues = (@queues.select { |q| q.connected? })
+        connected_queues = @queues.select { |q| q.connected? }
         longest_connected_queue = connected_queues.sort_by(&:size).reverse[0]
         assignments.push([s, longest_connected_queue])
       end
     elsif policy == :lcsflcq
-      # Least Connected Server First/Longest Connected Queue (LCSF/LCQ)
+      serverConnectedQueues = []
 
-      # TODO: Do this policy.
+      # Least Connected Server First/Longest Connected Queue (LCSF/LCQ)
+      shuffled_servers.each do |s|
+        connected_queues = @queues.select { |q| q.connected? }
+        serverConnectedQueues.push([s, connected_queues])
+      end
+
+      # sorted is sorted based on ascending connected queue length
+      sorted = serverConnectedQueues.sort_by do |item|
+        item[1].size # Sort by number of connected queues
+      end
+
+      least_connected_server = sorted[0][0]
+      longest_connected_queue = sorted[0][1].sort_by(&:size).reverse[0]
+
+      assignments.push([least_connected_server, longest_connected_queue])
+      sorted.delete(least_connected_server)
+
+      sorted.each do |item|
+        server = item[0]
+        queue = item[1].sort_by(&:size).reverse[0]
+        assignments.push([server, queue])
+      end
     end
 
     assignments
