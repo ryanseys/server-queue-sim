@@ -74,7 +74,7 @@ class Simulation
 
   def printStatistics
     results = getStatistics
-    puts "\nResults for Policy = #{@policy}, p = #{@probabs}, and λ = #{@lambdas}"
+    puts "\nResults for Policy = #{@policy}, p = #{@probabs}, and lambda = #{@lambdas}"
     puts "Average queue length over #{@maxReps} reps: #{results[:totalAverageQueueOccupancy]}"
     puts "Range = #{results[:range]}"
     puts "95% Confidence interval = (#{results[:lowCI]}, #{results[:highCI]})"
@@ -216,12 +216,17 @@ class Simulation
 
         collectStatistics()
 
+
         @time += 1
       end
+
+      print "."
 
       collectRepStats()
       resetSimulation()
     end
+
+    puts "done"
   end
 end
 
@@ -270,7 +275,7 @@ end
 
 # Run your simulations here
 
-MAX_TIME = 100
+MAX_TIME = 50000
 MAX_REPS = 20
 
 puts 'Running your simulation. Please be patient...'
