@@ -170,7 +170,7 @@ class Simulation
             @stats[:numServiced] += 1
           end
         else
-          # TODO: Topology 2
+          # Topology 2
           # Step 1. Assign each server to a queue.
           assignments = assignServersToQueues(@policy)
 
@@ -311,7 +311,7 @@ NUM_QUEUES = 5
 NUM_SERVERS = 3
 
 POLICIES2.each do |policy|
-  # TODO: Topology 2
+  # Topology 2
   lambdas = Array.new(10, 0.02).map.with_index {|x, i| x * (i+1) }
   lambdas.each do |lambda|
     pn = Array.new(5, 0.5)
