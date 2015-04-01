@@ -124,7 +124,10 @@ class Simulation
       longest_connected_queue = sorted[0][1].sort_by(&:size).reverse[0]
 
       assignments.push([least_connected_server, longest_connected_queue])
-      sorted.delete(least_connected_server)
+
+      sorted.delete_if do |item|
+        item[0] == least_connected_server
+      end
 
       sorted.each do |item|
         server = item[0]
