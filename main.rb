@@ -282,20 +282,47 @@ puts 'Running your simulation. Please be patient...'
 
 
 # Topology 1, Symmetric comparisons
-{1.0 => 0.02, 0.8 => 0.02, 0.2 => 0.014}.each do |p, lambda_step|
-  POLICIES.each do |policy|
-    file = File.open("results/topology1/symmetric/p#{p}-#{policy}.csv", 'w')
-    lambdas = Array.new(10, lambda_step).map.with_index {|x, i| x * (i+1) }
-    lambdas.each do |lambda|
-      pn = Array.new(5, p)
-      ln = Array.new(5, lambda)
-      sim = Simulation.new(MAX_TIME, MAX_REPS, 5, 1, policy, pn, ln)
-      sim.runSimulation
-      sim.writeStatistics(file, [lambda])
+def top1_symmetric
+  {1.0 => 0.02, 0.8 => 0.02, 0.2 => 0.014}.each do |p, lambda_step|
+    POLICIES.each do |policy|
+      file = File.open("results/topology1/symmetric/p#{p}-#{policy}.csv", 'w')
+      lambdas = Array.new(10, lambda_step).map.with_index {|x, i| x * (i+1) }
+      lambdas.each do |lambda|
+        pn = Array.new(5, p)
+        ln = Array.new(5, lambda)
+        sim = Simulation.new(MAX_TIME, MAX_REPS, 5, 1, policy, pn, ln)
+        sim.runSimulation
+        sim.writeStatistics(file, [lambda])
+      end
     end
   end
 end
 
+# Topology 
+def top1_asymmetric
+  POLICIES.each do |policy|
+    file = File.open("results/topology1/asymmetric/#{policy}.csv", 'w')
+    base_lambdas = (1..10).collect { |n| 0.006 * n }
+    base_lambdas.each do |base_lambda|
+      pn = [1.0, 0.8, 0.6, 0.4, 0.2]
+      ln = (1..5).collect { |n| base_lambda * n }
+      sim = Simulation.new(MAX_TIME, MAX_REPS, 5, 1, policy, pn, ln)
+      sim.runSimulation
+      sim.writeStatistics(file, [base_lambda])
+    end
+  end
+end
+
+puts "Run which simulation group?"
+puts "a = topology 1 symmetric"
+puts "b = topology 1 asymmetric"
+
+case gets.chomp
+when "a"
+  top1_symmetric
+when "b"
+  top1_asymmetric
+end
 
 
 ## Topology 1 - Symmetric (All p are equal)
