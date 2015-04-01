@@ -45,7 +45,7 @@ class Simulation
     end
   end
 
-  def printStatistics
+  def getStatistics
     queueOccupancies = @stats[:averagePerRep]
     totalAverageQueueOccupancy = average(queueOccupancies)
 
@@ -64,10 +64,30 @@ class Simulation
     lowCI = totalAverageQueueOccupancy - range;
     highCI = totalAverageQueueOccupancy + range;
 
+    {
+      totalAverageQueueOccupancy: totalAverageQueueOccupancy,
+      range: range,
+      lowCI: lowCI,
+      highCI: highCI
+    }
+  end
+
+  def printStatistics
+    results = getStatistics
     puts "\nResults for Policy = #{@policy}, p = #{@probabs}, and λ = #{@lambdas}"
-    puts "Average queue length over #{@maxReps} reps: #{totalAverageQueueOccupancy}"
-    puts "Range = #{range}"
-    puts "95% Confidence interval = (#{lowCI}, #{highCI})"
+    puts "Average queue length over #{@maxReps} reps: #{results[:totalAverageQueueOccupancy]}"
+    puts "Range = #{results[:range]}"
+    puts "95% Confidence interval = (#{results[:lowCI]}, #{results[:highCI]})"
+  end
+
+  def writeStatistics(file, extras = [])
+    results = getStatistics
+    values = extras + [
+      results[:totalAverageQueueOccupancy],
+      results[:lowCI],
+      results[:highCI]
+    ]
+    file.puts(values.join(","))
   end
 
   # Selects a queue based on the different policies possible
@@ -157,7 +177,7 @@ class Simulation
   end
 
   def runSimulation
-    for i in (0...@maxReps)
+    (0...@maxReps).each do |i|
       while @time <= @maxTime
         # Topology 1
         if @servers.size == 1
@@ -255,72 +275,90 @@ MAX_REPS = 20
 
 puts 'Running your simulation. Please be patient...'
 
-# Topology 1 - Symmetric (All p are equal)
 
-POLICIES.each do |policy|
-
-  # p = 1, λ = 0.02
-  pn = Array.new(5, 1.0)
-  ln = Array.new(5, 0.02)
-  sim = Simulation.new(MAX_TIME, MAX_REPS, 5, 1, policy, pn, ln)
-  sim.runSimulation
-  sim.printStatistics
-
-  # p = 1, λ = 0.02 × i, i = 1, 2, ...
-  lambdas = Array.new(10, 0.02).map.with_index {|x, i| x * (i+1) }
-  lambdas.each do |lambda|
-    pn = Array.new(5, 1.0)
-    ln = Array.new(5, lambda)
-    sim = Simulation.new(MAX_TIME, MAX_REPS, 5, 1, policy, pn, ln)
-    sim.runSimulation
-    sim.printStatistics
-  end
-
-  # p = 0.8, λ = 0.02 × i, i = 1, 2, ...
-  lambdas = Array.new(10, 0.02).map.with_index {|x, i| x * (i+1) }
-  lambdas.each do |lambda|
-    pn = Array.new(5, 0.8)
-    ln = Array.new(5, lambda)
-    sim = Simulation.new(MAX_TIME, MAX_REPS, 5, 1, policy, pn, ln)
-    sim.runSimulation
-    sim.printStatistics
-  end
-
-  # p = 0.2, λ = 0.014 × i, i = 1, 2, ...
-  lambdas = Array.new(10, 0.014).map.with_index {|x, i| x * (i+1) }
-  lambdas.each do |lambda|
-    pn = Array.new(5, 0.2)
-    ln = Array.new(5, lambda)
-    sim = Simulation.new(MAX_TIME, MAX_REPS, 5, 1, policy, pn, ln)
-    sim.runSimulation
-    sim.printStatistics
-  end
-
-  # Topology 1 - Asymmetric (p are different)
-
-  # p1 = 1, p2 = 0.8, p3 = 0.6, p4 = 0.4 and p5 = 0.2
-  # λ = 0.006 × i, i = 1, 2, ...
-  lambdas = Array.new(10, 0.006).map.with_index {|x, i| x * (i+1) }
-  lambdas.each do |lambda|
-    pn = Array.new(5, 0.2).map.with_index {|x, i| x * (5-i) }
-    ln = Array.new(5, lambda)
-    sim = Simulation.new(MAX_TIME, MAX_REPS, 5, 1, policy, pn, ln)
-    sim.runSimulation
-    sim.printStatistics
+# Topology 1, Symmetric comparisons
+{1.0 => 0.02, 0.8 => 0.02, 0.2 => 0.014}.each do |p, lambda_step|
+  POLICIES.each do |policy|
+    file = File.open("results/topology1/symmetric/p#{p}-#{policy}.csv", 'w')
+    lambdas = Array.new(10, lambda_step).map.with_index {|x, i| x * (i+1) }
+    lambdas.each do |lambda|
+      pn = Array.new(5, p)
+      ln = Array.new(5, lambda)
+      sim = Simulation.new(MAX_TIME, MAX_REPS, 5, 1, policy, pn, ln)
+      sim.runSimulation
+      sim.writeStatistics(file, [lambda])
+    end
   end
 end
 
-NUM_QUEUES = 5
-NUM_SERVERS = 3
 
-POLICIES2.each do |policy|
-  # Topology 2
-  lambdas = Array.new(10, 0.02).map.with_index {|x, i| x * (i+1) }
-  lambdas.each do |lambda|
-    pn = Array.new(5, 0.5)
-    ln = Array.new(5, lambda).map.with_index {|x, i| x * (i+1) }
-    sim = Simulation.new(MAX_TIME, MAX_REPS, NUM_QUEUES, NUM_SERVERS, policy, pn, ln)
-    sim.runSimulation
-    sim.printStatistics
-  end
-end
+
+## Topology 1 - Symmetric (All p are equal)
+#
+#POLICIES.each do |policy|
+#
+#  # p = 1, λ = 0.02
+#  pn = Array.new(5, 1.0)
+#  ln = Array.new(5, 0.02)
+#  sim = Simulation.new(MAX_TIME, MAX_REPS, 5, 1, policy, pn, ln)
+#  sim.runSimulation
+#  sim.printStatistics
+#
+#  # p = 1, λ = 0.02 × i, i = 1, 2, ...
+#  lambdas = Array.new(10, 0.02).map.with_index {|x, i| x * (i+1) }
+#  lambdas.each do |lambda|
+#    pn = Array.new(5, 1.0)
+#    ln = Array.new(5, lambda)
+#    sim = Simulation.new(MAX_TIME, MAX_REPS, 5, 1, policy, pn, ln)
+#    sim.runSimulation
+#    sim.printStatistics
+#  end
+#
+#  # p = 0.8, λ = 0.02 × i, i = 1, 2, ...
+#  lambdas = Array.new(10, 0.02).map.with_index {|x, i| x * (i+1) }
+#  lambdas.each do |lambda|
+#    pn = Array.new(5, 0.8)
+#    ln = Array.new(5, lambda)
+#    sim = Simulation.new(MAX_TIME, MAX_REPS, 5, 1, policy, pn, ln)
+#    sim.runSimulation
+#    sim.printStatistics
+#  end
+#
+#  # p = 0.2, λ = 0.014 × i, i = 1, 2, ...
+#  lambdas = Array.new(10, 0.014).map.with_index {|x, i| x * (i+1) }
+#  lambdas.each do |lambda|
+#    pn = Array.new(5, 0.2)
+#    ln = Array.new(5, lambda)
+#    sim = Simulation.new(MAX_TIME, MAX_REPS, 5, 1, policy, pn, ln)
+#    sim.runSimulation
+#    sim.printStatistics
+#  end
+#
+#  # Topology 1 - Asymmetric (p are different)
+#
+#  # p1 = 1, p2 = 0.8, p3 = 0.6, p4 = 0.4 and p5 = 0.2
+#  # λ = 0.006 × i, i = 1, 2, ...
+#  lambdas = Array.new(10, 0.006).map.with_index {|x, i| x * (i+1) }
+#  lambdas.each do |lambda|
+#    pn = Array.new(5, 0.2).map.with_index {|x, i| x * (5-i) }
+#    ln = Array.new(5, lambda)
+#    sim = Simulation.new(MAX_TIME, MAX_REPS, 5, 1, policy, pn, ln)
+#    sim.runSimulation
+#    sim.printStatistics
+#  end
+#end
+#
+#NUM_QUEUES = 5
+#NUM_SERVERS = 3
+#
+#POLICIES2.each do |policy|
+#  # Topology 2
+#  lambdas = Array.new(10, 0.02).map.with_index {|x, i| x * (i+1) }
+#  lambdas.each do |lambda|
+#    pn = Array.new(5, 0.5)
+#    ln = Array.new(5, lambda).map.with_index {|x, i| x * (i+1) }
+#    sim = Simulation.new(MAX_TIME, MAX_REPS, NUM_QUEUES, NUM_SERVERS, policy, pn, ln)
+#    sim.runSimulation
+#    sim.printStatistics
+#  end
+#end
