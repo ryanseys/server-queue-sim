@@ -281,7 +281,6 @@ MAX_REPS = 20
 puts 'Running your simulation. Please be patient...'
 
 
-# Topology 1, Symmetric comparisons
 def top1_symmetric
   {1.0 => 0.02, 0.8 => 0.02, 0.2 => 0.014}.each do |p, lambda_step|
     POLICIES.each do |policy|
@@ -298,7 +297,6 @@ def top1_symmetric
   end
 end
 
-# Topology 
 def top1_asymmetric
   POLICIES.each do |policy|
     file = File.open("results/topology1/asymmetric/#{policy}.csv", 'w')
@@ -313,15 +311,37 @@ def top1_asymmetric
   end
 end
 
+NUM_QUEUES = 5
+NUM_SERVERS = 3
+
+def top2
+  POLICIES2.each do |policy|
+    file = File.open("results/topology2/#{policy}.csv", 'w')
+    base_lambdas = (1..10).collect { |n| 0.02 * n }
+    base_lambdas.each do |base_lambda|
+      pn = Array.new(5, 0.5)
+      ln = (1..5).collect { |n| base_lambda * n }
+      puts pn
+      puts ln
+      sim = Simulation.new(MAX_TIME, MAX_REPS, NUM_QUEUES, NUM_SERVERS, policy, pn, ln)
+      sim.runSimulation
+      sim.writeStatistics(file, [base_lambda])
+    end
+  end
+end
+
 puts "Run which simulation group?"
 puts "a = topology 1 symmetric"
 puts "b = topology 1 asymmetric"
+puts "c = topology 2"
 
 case gets.chomp
 when "a"
   top1_symmetric
 when "b"
   top1_asymmetric
+when "c"
+  top2
 end
 
 
