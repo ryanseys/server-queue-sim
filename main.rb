@@ -1,3 +1,4 @@
+require './tes.rb'
 # Constants - Do not change
 POLICIES = [:random, :roundrobin, :lcq]
 POLICIES2 = [:random, :aslcq, :lcsflcq]
@@ -5,6 +6,38 @@ POLICIES2 = [:random, :aslcq, :lcsflcq]
 # Calculates the average of all the numbers in the array
 def average(arr)
   arr.reduce(:+).to_f / arr.size
+end
+
+# default no correlation (global values)
+$a = 0.5;
+$b = 0.5;
+$tesON = false
+$filename = ""
+
+puts "TES on? (y/n)? (default = n)"
+
+case gets.chomp
+when "y"
+  puts "Which correlation would you like?"
+  puts "h = High correlation (a = b = 0.1)"
+  puts "l = Low correlation (a = b = 0.4)"
+  puts "n = No correlation (a = b = 0.5)"
+
+  case gets.chomp
+  when "h"
+    $a = 0.1
+    $b = 0.1
+    $filename = "tes-high-correlation-"
+  when "l"
+    $a = 0.4
+    $b = 0.4
+    $filename = "tes-low-correlation-"
+  else
+    $filename = "tes-no-correlation-"
+  end
+
+  $tesON = true
+
 end
 
 class Simulation
@@ -39,9 +72,16 @@ class Simulation
   end
 
   def generateArrivals()
-    for i in (0...@numQueues)
-      queue = @queues[i]
-      queue.generateArrival(@time)
+    if $tesON == true
+      for i in (0...@numQueues)
+        queue = @queues[i]
+        queue.generateTESArrival(@time)
+      end
+    else
+      for i in (0...@numQueues)
+        queue = @queues[i]
+        queue.generateArrival(@time)
+      end
     end
   end
 
@@ -238,6 +278,7 @@ class SimQueue
     @queue = Array.new
     @lambda = lambda
     @probConnected = probability
+    @tesGenerator = Tes.new($a, $b)
   end
 
   def connected?
@@ -265,6 +306,12 @@ class SimQueue
       @queue.push(t)
     end
   end
+
+  def generateTESArrival(t)
+    if @tesGenerator.get_next() < @lambda
+      @queue.push(t)
+    end
+  end
 end
 
 class Server
@@ -284,7 +331,7 @@ puts 'Running your simulation. Please be patient...'
 def top1_symmetric
   {1.0 => 0.02, 0.8 => 0.02, 0.2 => 0.014}.each do |p, lambda_step|
     POLICIES.each do |policy|
-      file = File.open("results/topology1/symmetric/p#{p}-#{policy}.csv", 'w')
+      file = File.open("results/topology1/symmetric/#{$filename}p#{p}-#{policy}.csv", 'w')
       lambdas = Array.new(10, lambda_step).map.with_index {|x, i| x * (i+1) }
       lambdas.each do |lambda|
         pn = Array.new(5, p)
@@ -299,7 +346,7 @@ end
 
 def top1_asymmetric
   POLICIES.each do |policy|
-    file = File.open("results/topology1/asymmetric/#{policy}.csv", 'w')
+    file = File.open("results/topology1/asymmetric/#{$filename}#{policy}.csv", 'w')
     base_lambdas = (1..10).collect { |n| 0.006 * n }
     base_lambdas.each do |base_lambda|
       pn = [1.0, 0.8, 0.6, 0.4, 0.2]
@@ -316,7 +363,7 @@ NUM_SERVERS = 3
 
 def top2
   POLICIES2.each do |policy|
-    file = File.open("results/topology2/#{policy}.csv", 'w')
+    file = File.open("results/topology2/#{$filename}#{policy}.csv", 'w')
     base_lambdas = (1..10).collect { |n| 0.02 * n }
     base_lambdas.each do |base_lambda|
       pn = Array.new(5, 0.5)

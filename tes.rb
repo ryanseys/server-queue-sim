@@ -1,16 +1,14 @@
 class Tes
 
 public
-  def initialize(a, b, n)
+  def initialize(a, b)
     @a = a
     @b = b
-    @n = n
-    @variates = Array.new
+    @prev = nil
   end
 
-  def get_variates
-    seed unless @variates.any?
-    @variates
+  def get_next()
+    Un1()
   end
 
 private
@@ -18,17 +16,13 @@ private
     ((@a + @b)*rand()) - @b
   end
 
-  def Un1
-    if @variates.any?
-      (@variates.last + Vn1()) % 1
+  def Un1()
+    if not @prev.nil?
+      @prev = (@prev + Vn1()) % 1
+      @prev
     else
-      rand
-    end
-  end
-
-  def seed
-    @n.times do
-      @variates.push(Un1())
+      @prev = rand
+      @prev
     end
   end
 end
